@@ -1,0 +1,7 @@
+node_modules/
+dist/
+sample/
+exports/
+.DS_Store
+push.command
+docs/*.pdf

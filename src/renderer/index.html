@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' file: blob:; img-src 'self' data:"
+    />
+    <title>Chatcut</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="titlebar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"></span>
+        <strong>Chatcut</strong>
+        <span class="tagline">채팅 반응으로 편집점 찾기</span>
+      </div>
+      <div class="sources">
+        <button id="btnVideo" class="source" title="원본 영상 열기">
+          <span class="k">영상</span><span id="videoName" class="v">열기</span>
+        </button>
+        <button id="btnChat" class="source" title="채팅 로그 열기">
+          <span class="k">채팅</span><span id="chatName" class="v">열기</span>
+        </button>
+      </div>
+      <div class="spacer"></div>
+      <span id="status" class="status" hidden></span>
+      <button id="btnSample" class="ghost">샘플로 체험</button>
+    </header>
+
+    <main class="workspace">
+      <section class="stage">
+        <div class="player-wrap">
+          <video id="player" preload="metadata" playsinline></video>
+          <div id="empty" class="empty">
+            <p class="empty-title">원본 영상과 채팅 로그를 끌어다 놓으세요</p>
+            <p class="empty-sub">채팅이 몰린 구간을 찾아 편집점 후보로 표시합니다. 쓸지 말지는 편집자가 정합니다.</p>
+            <div class="empty-steps">
+              <button id="emptyVideo" class="step"><span class="n">1</span><span><b>원본 영상</b><small>mp4, mov, mkv …</small></span></button>
+              <button id="emptyChat" class="step"><span class="n">2</span><span><b>채팅 로그</b><small>txt, json, ndjson</small></span></button>
+            </div>
+            <button id="emptySample" class="link">데이터가 없다면 샘플로 체험하기</button>
+            <p id="noVideoNote" class="note" hidden>영상 없이도 반응 그래프와 후보 목록은 볼 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="transport">
+          <button id="btnPlay" class="play" title="재생 / 일시정지 (Space)">▶</button>
+          <span id="clock" class="mono clock">0:00:00 / 0:00:00</span>
+          <div class="spacer"></div>
+          <span class="keys">
+            <kbd>Space</kbd> 재생 <kbd>←</kbd><kbd>→</kbd> 5초 <kbd>↑</kbd><kbd>↓</kbd> 후보 이동 <kbd>A</kbd> 채택 <kbd>X</kbd> 제외
+            <kbd>P</kbd> 구간 미리보기
+          </span>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <h2>편집점 후보</h2>
+            <span id="counts" class="counts"></span>
+          </div>
+          <div class="filters">
+            <button data-filter="all">전체</button>
+            <button data-filter="pending">검토 전</button>
+            <button data-filter="accepted">채택</button>
+            <button data-filter="rejected">제외</button>
+          </div>
+        </div>
+        <ol id="segList" class="seg-list"></ol>
+        <div class="panel-foot">
+          <span id="acceptSummary" class="summary"></span>
+          <div class="actions">
+            <button id="btnEdl" title="Premiere Pro, DaVinci Resolve에서 불러올 수 있는 EDL">EDL 내보내기</button>
+            <button id="btnClips" class="primary" title="채택한 구간을 원본에서 잘라 파일로 저장">클립 자르기</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <section class="timeline-panel">
+      <div class="tl-toolbar">
+        <label title="높일수록 작은 반응도 후보로 잡습니다">
+          민감도 <input type="range" id="sens" min="3" max="10" step="0.5" />
+          <span id="sensVal" class="mono val"></span>
+        </label>
+        <label title="채팅은 장면보다 늦게 반응합니다. 그만큼 구간 시작을 앞으로 당깁니다">
+          반응 지연 보정 <input type="range" id="preroll" min="0" max="40" step="1" />
+          <span id="prerollVal" class="mono val"></span>
+        </label>
+        <label title="영상 시각 = 채팅 시각 − 이 값. 영상이 방송 도중부터 녹화됐다면 그만큼 넣어 주세요">
+          채팅 싱크
+          <button class="nudge" data-nudge="-1">−</button>
+          <input type="number" id="offset" step="1" />
+          <button class="nudge" data-nudge="1">+</button> 초
+        </label>
+        <label class="check" title="ㅋㅋ, ㄷㄷ, 미쳤다 같은 반응 표현에 가중치를 줍니다">
+          <input type="checkbox" id="weighted" /> 반응 표현 가중치
+        </label>
+        <div class="spacer"></div>
+        <span class="legend">
+          <i class="sw pending"></i>검토 전 <i class="sw accepted"></i>채택 <i class="sw rejected"></i>제외 <i class="sw base"></i>평소 수준
+        </span>
+      </div>
+      <canvas id="timeline"></canvas>
+      <div class="tl-help">휠로 확대·축소, Shift+휠로 이동, 더블클릭하면 전체 보기</div>
+    </section>
+
+    <div id="toasts" class="toasts"></div>
+    <div id="dropHint" class="drop-hint">놓으면 불러옵니다</div>
+    <div id="overlay" class="overlay" hidden>
+      <div class="overlay-box">
+        <p>클립을 자르는 중</p>
+        <progress id="overlayBar" max="1" value="0"></progress>
+        <p id="overlayText" class="mono small"></p>
+        <button id="overlayCancel">중단</button>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

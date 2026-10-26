@@ -1,0 +1,25 @@
+{
+  "name": "chatcut",
+  "version": "0.1.0",
+  "description": "채팅 반응이 몰리는 구간을 찾아 편집점 후보로 표시하는 데스크톱 앱 (Electron + TypeScript)",
+  "main": "dist/main/main/main.js",
+  "author": "JJonyeok",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.main.json && tsc -p tsconfig.renderer.json && node scripts/copy-static.mjs",
+    "start": "npm run build && electron .",
+    "sample": "node scripts/make-sample.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^33.4.0",
+    "typescript": "^5.9.0"
+  }
+}
